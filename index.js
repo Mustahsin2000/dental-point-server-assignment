@@ -37,9 +37,41 @@ app.get('/services/:id',async(req,res)=>{
 });
 
 //review
+app.get('/review',async(req,res)=>{
+    let query = {};
+    if(req.query.email){
+        query={
+            email:req.query.email
+        }
+    }
+    const cursor = reviewCollect.find(query);
+    const review = await cursor.toArray();
+    res.send(review);
+})
 app.post('/review',async(req,res)=>{
     const review = req.body;
     const result = await reviewCollect.insertOne(review);
+    res.send(result);
+});
+
+app.delete('/review/:id',async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id:ObjectId(id)};
+    const result = await reviewCollect.deleteOne(query);
+    res.send(result);
+});
+
+
+app.patch('/review/:id',async(req,res)=>{
+    const id = req.params.id;
+    const status = req.body.status;
+    const query = {_id:ObjectId(id)};
+    const updatedDoc = {
+        $set:{
+              status : status
+        }
+    }
+    const result = await reviewCollect.updateOne(query,updatedDoc);
     res.send(result);
 })
 
