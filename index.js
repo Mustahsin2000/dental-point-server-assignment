@@ -19,10 +19,26 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+
+function verifttoken(req,res,next){
+    const header=req.headers.authorization;
+    if(!header){
+        return res.status(401).send({message:'unauthorized access'});
+    }
+    const token = header.split(' ')[1];
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,function(error,decoded){
+        if(error){
+            return res.status(401).send({message:'unauthorized access'});
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 app.post('/jwt',(req,res)=>{
     const user = req.body;
     console.log(user);
-    const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'10h'})
+    const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1h'})
     res.send({token})
 })
 
@@ -51,7 +67,12 @@ app.get('/services/:id',async(req,res)=>{
 });
 
 //review
-app.get('/review',async(req,res)=>{
+app.get('/review',verifttoken,async(req,res)=>{
+    const decoded = req.decoded;
+    if(decoded.email !== req.query.email){
+        res.status(403).send({message: 'unauthorized access'})
+    }
+    
     let query = {};
     if(req.query.email){
         query={
